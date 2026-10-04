@@ -29,6 +29,10 @@
   background: #fff;
 }
 
+.header-title {
+  min-width: 0;
+}
+
 .admin-header h2 {
   margin: 4px 0 0;
 }
@@ -90,18 +94,36 @@
     display: block;
   }
 
-  .admin-sider {
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
+  .admin-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px;
   }
 
-  .admin-header {
-    align-items: stretch;
-    flex-direction: column;
+  .admin-header .ant-card {
+    width: 100%;
   }
 
   .admin-content {
-    padding: 16px;
+    min-height: calc(100svh - 148px);
+    padding: 12px;
+  }
+
+  .brand {
+    padding: 4px 0 18px;
+  }
+
+  .login-card {
+    width: 100%;
+  }
+
+  .create-card,
+  .help-card {
+    width: 100%;
+  }
+
+  .ant-drawer-body {
+    padding: 18px;
   }
 }

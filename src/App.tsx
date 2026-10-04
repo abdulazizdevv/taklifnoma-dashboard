@@ -4,6 +4,7 @@ import {
   CopyOutlined,
   EditOutlined,
   LogoutOutlined,
+  MenuOutlined,
   PlusOutlined,
   ReloadOutlined,
   SendOutlined,
@@ -18,6 +19,7 @@ import {
   Drawer,
   Flex,
   Form,
+  Grid,
   Input,
   Layout,
   Menu,
@@ -53,6 +55,7 @@ import type {
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
+const { useBreakpoint } = Grid;
 
 const eventTypes: Array<{ value: EventType; label: string }> = [
   { value: "WEDDING", label: "To‘y / Nikoh" },
@@ -90,6 +93,9 @@ function AdminApp() {
   const [authLoading, setAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<"create" | "list">("create");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   useEffect(() => {
     let active = true;
@@ -148,27 +154,22 @@ function AdminApp() {
 
   return (
     <Layout className="admin-shell">
-      <Sider width={260} theme="light" className="admin-sider">
-        <div className="brand">
-          <Text type="secondary">taklifnoma</Text>
-          <strong>Admin</strong>
-        </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[activeView]}
-          onClick={({ key }) => setActiveView(key as "create" | "list")}
-          items={[
-            { key: "create", icon: <PlusOutlined />, label: "Yangi taklifnoma" },
-            { key: "list", icon: <EditOutlined />, label: "Taklifnomalar" },
-          ]}
-        />
-      </Sider>
+      {!isMobile && (
+        <Sider width={260} theme="light" className="admin-sider">
+          <Navigation activeView={activeView} onChange={setActiveView} />
+        </Sider>
+      )}
 
       <Layout>
         <Header className="admin-header">
-          <div>
-            <Text type="secondary">Private workspace</Text>
-            <Title level={2}>{activeView === "create" ? "Yangi taklifnoma" : "Taklifnomalar"}</Title>
+          <div className="header-title">
+            <Space align="start">
+              {isMobile && <Button icon={<MenuOutlined />} onClick={() => setMobileMenuOpen(true)} />}
+              <div>
+                <Text type="secondary">Private workspace</Text>
+                <Title level={2}>{activeView === "create" ? "Yangi taklifnoma" : "Taklifnomalar"}</Title>
+              </div>
+            </Space>
           </div>
           <Card size="small">
             <Space>
@@ -183,6 +184,22 @@ function AdminApp() {
             </Space>
           </Card>
         </Header>
+
+        <Drawer
+          title="taklifnoma Admin"
+          placement="left"
+          width={280}
+          open={mobileMenuOpen}
+          onClose={() => setMobileMenuOpen(false)}
+        >
+          <Navigation
+            activeView={activeView}
+            onChange={(view) => {
+              setActiveView(view);
+              setMobileMenuOpen(false);
+            }}
+          />
+        </Drawer>
 
         <Content className="admin-content">
           {session.user.role !== "ADMIN" ? (
@@ -200,6 +217,32 @@ function AdminApp() {
         </Content>
       </Layout>
     </Layout>
+  );
+}
+
+function Navigation({
+  activeView,
+  onChange,
+}: {
+  activeView: "create" | "list";
+  onChange: (view: "create" | "list") => void;
+}) {
+  return (
+    <>
+      <div className="brand">
+        <Text type="secondary">taklifnoma</Text>
+        <strong>Admin</strong>
+      </div>
+      <Menu
+        mode="inline"
+        selectedKeys={[activeView]}
+        onClick={({ key }) => onChange(key as "create" | "list")}
+        items={[
+          { key: "create", icon: <PlusOutlined />, label: "Yangi taklifnoma" },
+          { key: "list", icon: <EditOutlined />, label: "Taklifnomalar" },
+        ]}
+      />
+    </>
   );
 }
 
@@ -327,6 +370,8 @@ function InvitationManager({ session }: { session: AuthSession }) {
   const [detailLoading, setDetailLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -428,12 +473,20 @@ function InvitationManager({ session }: { session: AuthSession }) {
           </Button>
         }
       >
-        <Table rowKey="id" columns={columns} dataSource={items} loading={loading} pagination={{ pageSize: 10 }} />
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={items}
+          loading={loading}
+          pagination={{ pageSize: 10, size: isMobile ? "small" : undefined }}
+          scroll={{ x: 720 }}
+          size={isMobile ? "small" : "middle"}
+        />
       </Card>
 
       <Drawer
         title={selected ? `#${selected.id} tahrirlash` : "Taklifnoma"}
-        width={720}
+        width={isMobile ? "100%" : 720}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         destroyOnHidden
@@ -462,6 +515,8 @@ function InvitationEditor({
   const { message } = AntApp.useApp();
   const publicUrl = `https://taklifnoma.my/invitation/${invitation.id}`;
   const [form] = Form.useForm();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   const initialValues = {
     title: invitation.title ?? "",
@@ -521,7 +576,7 @@ function InvitationEditor({
         <Form.Item label="Sana va vaqt" name="startsAt">
           <Input type="datetime-local" />
         </Form.Item>
-        <Flex gap={12}>
+        <Flex gap={12} vertical={isMobile}>
           <Form.Item label="Kuyov" name="groom" className="half-field">
             <Input />
           </Form.Item>
