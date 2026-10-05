@@ -47,3 +47,10 @@ export function submitInvitation(accessToken: string, id: number) {
     accessToken,
   });
 }
+
+export function publishInvitation(accessToken: string, id: number) {
+  return apiRequest<CreatedInvitation>(`/api/v1/invitations/${id}/publish`, {
+    method: "POST",
+    accessToken,
+  });
+}

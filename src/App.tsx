@@ -38,7 +38,7 @@ import {
   createInvitation,
   getInvitation,
   listInvitations,
-  submitInvitation,
+  publishInvitation,
   updateInvitation,
 } from "./lib/api/invitations";
 import { listTemplates } from "./lib/api/templates";
@@ -354,7 +354,7 @@ function CreateInvitationPanel({ session, onCreated }: { session: AuthSession; o
           <li>Draft yaratiladi</li>
           <li>Ro‘yxatdan taklifnoma ochiladi</li>
           <li>Ism, sana, manzil va kontaktlar to‘ldiriladi</li>
-          <li>Submit/payment/publish flow backend holatiga qarab yuradi</li>
+          <li>Admin publish qilgandan keyin public link ochiladi</li>
         </ol>
       </Card>
     </Flex>
@@ -420,15 +420,15 @@ function InvitationManager({ session }: { session: AuthSession }) {
     }
   }
 
-  async function handleSubmit() {
+  async function handlePublish() {
     if (!selectedId) return;
     setSaving(true);
     try {
-      await submitInvitation(session.accessToken, selectedId);
-      message.success("Paymentga yuborildi");
+      await publishInvitation(session.accessToken, selectedId);
+      message.success("Public qilindi");
       await reload();
     } catch (reason) {
-      message.error(reason instanceof Error ? reason.message : "Submit bo‘lmadi.");
+      message.error(reason instanceof Error ? reason.message : "Publish bo‘lmadi.");
     } finally {
       setSaving(false);
     }
@@ -494,7 +494,7 @@ function InvitationManager({ session }: { session: AuthSession }) {
         {detailLoading || !selected ? (
           <Spin />
         ) : (
-          <InvitationEditor invitation={selected} saving={saving} onSave={handleSave} onSubmit={handleSubmit} />
+          <InvitationEditor invitation={selected} saving={saving} onSave={handleSave} onSubmit={handlePublish} />
         )}
       </Drawer>
     </>
@@ -595,7 +595,7 @@ function InvitationEditor({
             Saqlash
           </Button>
           <Button icon={<SendOutlined />} onClick={onSubmit} loading={saving}>
-            Paymentga yuborish
+            Publish qilish
           </Button>
         </Space>
       </Form>
