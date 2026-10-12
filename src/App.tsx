@@ -283,7 +283,10 @@ function CreateInvitationPanel({ session, onCreated }: { session: AuthSession; o
     listTemplates(eventType, controller.signal)
       .then((items) => {
         setTemplates(items);
-        form.setFieldsValue({ templateId: items[0]?.id });
+        const current = form.getFieldValue("templateId");
+        if (!items.some((item) => item.id === current)) {
+          form.setFieldsValue({ templateId: items[0]?.id });
+        }
       })
       .catch(() => {
         setTemplates([]);
@@ -515,10 +518,36 @@ function InvitationEditor({
   const { message } = AntApp.useApp();
   const publicUrl = `https://taklifnoma.my/invitation/${invitation.id}`;
   const [form] = Form.useForm();
+  const [templates, setTemplates] = useState<TemplateOption[]>([]);
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+  const canEdit = invitation.status === "DRAFT" || invitation.status === "WAITING_PAYMENT";
+
+  useEffect(() => {
+    const controller = new AbortController();
+    listTemplates(invitation.eventType, controller.signal)
+      .then(setTemplates)
+      .catch(() => setTemplates([]));
+    return () => controller.abort();
+  }, [invitation.eventType]);
+
+  const templateOptions = templates.some((item) => item.id === invitation.template.id)
+    ? templates
+    : [
+        {
+          id: invitation.template.id,
+          code: invitation.template.code,
+          name: invitation.template.name,
+          eventType: invitation.eventType,
+          previewUrl: "",
+          priceAmount: 0,
+          currency: "UZS",
+        },
+        ...templates,
+      ];
 
   const initialValues = {
+    templateId: invitation.template.id,
     title: invitation.title ?? "",
     startsAt: invitation.startsAt?.slice(0, 16) ?? "",
     groom: invitation.participants.find((item) => item.role === "groom")?.name ?? "",
@@ -528,6 +557,7 @@ function InvitationEditor({
   };
 
   function handleFinish(values: {
+    templateId: number;
     title: string;
     startsAt?: string;
     groom?: string;
@@ -536,6 +566,7 @@ function InvitationEditor({
     venueAddress?: string;
   }) {
     onSave({
+      ...(canEdit ? { templateId: values.templateId } : {}),
       title: values.title,
       participants: [
         ...(values.groom ? [{ role: "groom", name: values.groom }] : []),
@@ -553,7 +584,9 @@ function InvitationEditor({
         <Descriptions.Item label="Status">
           <Tag color={invitation.status === "PUBLISHED" ? "green" : "gold"}>{invitation.status}</Tag>
         </Descriptions.Item>
-        <Descriptions.Item label="Template">{invitation.template.name}</Descriptions.Item>
+        <Descriptions.Item label="Template">
+          {invitation.template.name} · {invitation.template.code}
+        </Descriptions.Item>
         <Descriptions.Item label="Public link">
           <Space>
             <Text copyable>{publicUrl}</Text>
@@ -570,6 +603,15 @@ function InvitationEditor({
       </Descriptions>
 
       <Form form={form} layout="vertical" initialValues={initialValues} onFinish={handleFinish}>
+        <Form.Item label="Dizayn" name="templateId" rules={[{ required: true, message: "Dizayn tanlang" }]}>
+          <Select
+            disabled={!canEdit}
+            options={templateOptions.map((template) => ({
+              value: template.id,
+              label: `${template.name} · ${template.code}`,
+            }))}
+          />
+        </Form.Item>
         <Form.Item label="Sarlavha" name="title" rules={[{ required: true }]}>
           <Input />
         </Form.Item>
