@@ -57,6 +57,25 @@ const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 
+function mapProviderFromUrl(url: string): "YANDEX" | "GOOGLE" | "OTHER" {
+  const host = new URL(url).hostname.toLowerCase();
+  if (host.includes("yandex.")) return "YANDEX";
+  if (host.includes("google.") || host === "maps.app.goo.gl" || host === "goo.gl") return "GOOGLE";
+  return "OTHER";
+}
+
+function validateMapUrl(_: unknown, value?: string) {
+  const link = value?.trim();
+  if (!link) return Promise.resolve();
+  if (link.length > 2048) return Promise.reject(new Error("Link 2048 belgidan oshmasin"));
+  try {
+    if (new URL(link).protocol !== "https:") return Promise.reject(new Error("https link kiriting"));
+  } catch {
+    return Promise.reject(new Error("To‘g‘ri https link kiriting"));
+  }
+  return Promise.resolve();
+}
+
 const eventTypes: Array<{ value: EventType; label: string }> = [
   { value: "WEDDING", label: "To‘y / Nikoh" },
   { value: "BIRTHDAY", label: "Tug‘ilgan kun" },
@@ -554,6 +573,7 @@ function InvitationEditor({
     bride: invitation.participants.find((item) => item.role === "bride")?.name ?? "",
     venueName: invitation.venue.name ?? "",
     venueAddress: invitation.venue.address ?? "",
+    mapUrl: invitation.venue.mapUrl ?? "",
   };
 
   function handleFinish(values: {
@@ -564,7 +584,9 @@ function InvitationEditor({
     bride?: string;
     venueName?: string;
     venueAddress?: string;
+    mapUrl?: string;
   }) {
+    const mapUrl = values.mapUrl?.trim();
     onSave({
       ...(canEdit ? { templateId: values.templateId } : {}),
       title: values.title,
@@ -575,6 +597,7 @@ function InvitationEditor({
       startsAt: values.startsAt ? new Date(values.startsAt).toISOString() : undefined,
       venueName: values.venueName,
       venueAddress: values.venueAddress,
+      ...(mapUrl ? { mapUrl, mapProvider: mapProviderFromUrl(mapUrl) } : {}),
     });
   }
 
@@ -631,6 +654,14 @@ function InvitationEditor({
         </Form.Item>
         <Form.Item label="Venue manzili" name="venueAddress">
           <Input.TextArea rows={3} />
+        </Form.Item>
+        <Form.Item
+          label="Lokatsiya linki"
+          name="mapUrl"
+          rules={[{ validator: validateMapUrl }]}
+          extra="Yandex, Google yoki 2GIS xarita havolasi. https bilan boshlansin."
+        >
+          <Input placeholder="https://yandex.uz/maps/..." inputMode="url" />
         </Form.Item>
         <Space wrap>
           <Button type="primary" htmlType="submit" icon={<CheckCircleOutlined />} loading={saving}>
